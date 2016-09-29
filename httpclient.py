@@ -52,6 +52,8 @@ class HTTPClient(object):
  
     def connect(self, host, port):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #http://stackoverflow.com/questions/5755507/creating-a-raw-http-request-with-sockets
+        s.settimeout(2)
         s.connect((host, port))
         return s
     
@@ -62,7 +64,7 @@ class HTTPClient(object):
         return int(code)
 
     def get_headers(self,data):
-        return None
+        return len(str(data))
 
     def get_body(self, data):
         #John Zwinck at http://stackoverflow.com/questions/599953/how-to-remove-the-left-part-of-a-string Sept. 27. 2016
@@ -92,16 +94,31 @@ class HTTPClient(object):
         data = self.recvall(sock)
         code = self.get_code(data)
         headers, body = self.get_body(data)
+        sock.close()
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
+        print args
         code = 500
         body = ""
         host, port = self.get_host_port(url)
         sock = self.connect(host, port)
-        sock.sendall("GET / HTTP/1.1\r\n")
+        sock.sendall("POST / HTTP/1.1\r\n")
         sock.sendall("Host:" + host + "\r\n")
+        sock.sendall("Content-Type: application/x-www-form-encoded")
+        length = self.get_headers(args)
+        print length
+        #urllib.urlencode(arg)
+        print "Content-Length: " + str(length) + "\r\n"
+        sock.sendall("Content-Length:" + str(length) + "\r\n")
+        sock.sendall(str(args))
         sock.sendall("\r\n")
+        print "before"
+        data = self.recvall(sock)
+        print "after"
+        code = self.get_code(data)
+        headers, body = self.get_body(data)
+        sock.close()
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):
