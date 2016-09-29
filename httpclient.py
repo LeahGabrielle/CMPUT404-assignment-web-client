@@ -102,6 +102,7 @@ class HTTPClient(object):
         code = self.get_code(data)
         headers, body = self.get_body(data)
         sock.close()
+        sys.stdout.write(data)
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
